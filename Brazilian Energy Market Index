@@ -1,0 +1,74 @@
+"""
+This project aims to create an index 
+for energy companies in Brazil and to
+provide a graphical analysis using the 
+plotly library. variables are in Portuguese. 
+"""
+
+import pandas as pd 
+import numpy as np
+import pandas_datareader.data as pdr
+import yfinance 
+import plotly.graph_objects as go
+import datetime  
+
+ativos_energia = [
+    "PETR4.SA",  # Petrobras
+    "ELET3.SA",  # Eletrobras
+    "ENEV3.SA",  # Eneva
+    "EGIE3.SA",  # Engie Brasil
+    "CPFE3.SA",  # CPFL Energia
+    "CSAN3.SA",  # Cosan
+    "TAEE11.SA", # Taesa
+    "NEOE3.SA",  # Neoenergia
+    "ENGI11.SA", # Energisa
+    "EQTL3.SA"   # Equatorial Energia
+]
+        
+
+# Obter a data de hoje
+data_final = datetime.datetime.now()
+
+#Calcular a data de 1 ano atras
+data_inicial_ano = data_final - datetime.timedelta(days=365)
+
+# Calcular a data de 30 dias atras
+data_inicial_mes = data_final - datetime.timedelta(days=30)
+
+#Obtendo as cotacoes pela database do Yahoo
+tabela_cotacoes_mes = yfinance.download(ativos_energia, data_inicial_mes, data_final)["Adj Close"]
+tabela_cotacoes_ano = yfinance.download(ativos_energia, data_inicial_ano, data_final)["Adj Close"]
+
+tabela_cotacoes_mes['indice_energia'] = tabela_cotacoes_mes.sum(axis=1)
+tabela_cotacoes_ano['indice_energia'] = tabela_cotacoes_ano.sum(axis=1)
+tabela_indice_energia_mes = tabela_cotacoes_mes['indice_energia']
+tabela_indice_energia_ano = tabela_cotacoes_ano['indice_energia']
+
+import plotly.express as px 
+
+layout = go.Layout(
+    paper_bgcolor = 'lightgray',
+    plot_bgcolor = 'lightgray',
+    xaxis = dict(showgrid = False, title = "Data", tickformat = '%d %b %Y', tickmode = 'auto', nticks = 2),
+    font = dict(color = 'black'),
+    yaxis = dict(showgrid = False),
+    margin = dict (l = 50, r = 50, b = 50, t = 50),
+    legend = dict (x=0.8, font_size = 22),
+    title = go.layout.Title(text = f'<b>Índice Mensal das 10 Maiores Empresas de Energia por Valor de Mercado</b>', x = 0.5)
+)
+
+fig = go.Figure (layout = layout)
+
+fig.add_trace(
+    go.Scatter(
+    x = tabela_indice_energia_ano.index,
+    y = tabela_indice_energia_ano.values,
+    mode = 'lines+markers',
+    name = "Índice Mensal das 10 Maiores Empresas de Energia por Valor de Mercado",
+    marker = dict(color = 'red'),
+    line = dict(width=2, color = 'red')
+)
+
+)
+
+fig.show()
